@@ -15,6 +15,16 @@ function searchCity(city) {
           // Process the retrieved forecast data and display the 5-day forecast for the city
           displayForecast(city, forecastData);
         })
+        .then(() => {
+          // Store the search in local storage
+          const searches = JSON.parse(localStorage.getItem("searches")) || [];
+          searches.push(city);
+          localStorage.setItem("searches", JSON.stringify(searches));
+
+          // Display the updated list of previous searches
+          displayPreviousSearches(searches);
+        })
+
         .catch(error => {
           console.error("Error retrieving forecast data:", error);
         });
@@ -22,42 +32,46 @@ function searchCity(city) {
     .catch(error => {
       console.error("Error retrieving city data:", error);
     });
-  
-  function displayForecast(city, forecastData) {
-    // Get the container element to display the forecast cards
-    const forecastContainer = document.getElementById("forecast-container");
+}
 
-    // Clear any existing forecast cards
-    forecastContainer.innerHTML = "";
+function displayForecast(city, forecastData) {
+  // Get the container element to display the forecast cards
+  const forecastContainer = document.getElementById("forecast-container");
 
-    // Create a card for each day in the forecast data
-    forecastData.list.forEach(day => {
-      // Extract the date, weather conditions, high temperature, and low temperature for the day
-      const date = new Date(day.dt * 1000).toLocaleDateString();
-      const conditions = day.weather[0].description;
-      const highTemp = day.main.temp_max;
-      const lowTemp = day.main.temp_min;
+  // Clear any existing forecast cards
+  forecastContainer.innerHTML = "";
 
-      // Create a card element
-      const card = document.createElement("div");
-      card.classList.add("card");
+  // Create a card for each day in the forecast data
+  forecastData.list.forEach(day => {
+    // Extract the date, weather conditions, high temperature, and low temperature for the day
+    const date = new Date(day.dt * 1000).toLocaleDateString();
+    const conditions = day.weather[0].description;
+    const highTemp = convertKelvinToFahrenheit(day.main.temp_max);
+    const lowTemp = convertKelvinToFahrenheit(day.main.temp_min);
 
-      // Create the card content
-      const cardContent = `
-        <h3>${city}</h3>
-        <p>Date: ${date}</p>
-        <p>Conditions: ${conditions}</p>
-        <p>High Temperature: ${highTemp}°C</p>
-        <p>Low Temperature: ${lowTemp}°C</p>
-      `;
+    // Create a card element
+    const card = document.createElement("div");
+    card.classList.add("card");
 
-      // Set the card content
-      card.innerHTML = cardContent;
+    // Create the card content
+    const cardContent = `
+      <h3>${city}</h3>
+      <p>Date: ${date}</p>
+      <p>Conditions: ${conditions}</p>
+      <p>High Temperature: ${highTemp}°F</p>
+      <p>Low Temperature: ${lowTemp}°F</p>
+    `;
 
-      // Append the card to the forecast container
-      forecastContainer.appendChild(card);
-    });
-  }
+    // Set the card content
+    card.innerHTML = cardContent;
+
+    // Append the card to the forecast container
+    forecastContainer.appendChild(card);
+  });
+}
+
+function convertKelvinToFahrenheit(kelvin) {
+  return ((kelvin - 273.15) * 9/5 + 32).toFixed(2);
 }
 
 function displayPreviousSearches(searches) {
@@ -67,23 +81,47 @@ function displayPreviousSearches(searches) {
   // Clear any existing previous searches
   previousSearchesContainer.innerHTML = "";
 
-  // Create a list element for each search in the searches array
+  // Create a button element for each search in the searches array
   searches.forEach(search => {
-    // Create a list item element
-    const listItem = document.createElement("li");
+    // Create a button element
+    const button = document.createElement("button");
 
-    // Set the text content of the list item to the search
-    listItem.textContent = search;
+    // Set the text content of the button to the search
+    button.textContent = search;
 
-    // Append the list item to the previous searches container
-    previousSearchesContainer.appendChild(listItem);
+    // Add an event listener to the button to perform the search again
+    button.addEventListener("click", function() {
+      searchCity(search);
+    });
+
+    // Append the button to the previous searches container
+    previousSearchesContainer.appendChild(button);
   });
 }
 
+function start() {
+  const button = document.getElementById("search-button");
+  button.addEventListener("click", function() {
+    const city = document.getElementById("city-input").value;
+    searchCity(city);
+  });
 
-// Call the searchCity function with the specified city
-searchCity();
+  // Retrieve previous searches from local storage
+  const searches = JSON.parse(localStorage.getItem("searches")) || [];
 
-// Call the displayPreviousSearches function with the specified searches
-displayPreviousSearches();
+  // Display the previous searches
+  displayPreviousSearches(searches);
+
+  // Add clear search button functionality
+  const clearButton = document.getElementById("clear-button");
+  clearButton.addEventListener("click", function() {
+    // Clear the previous searches from local storage
+    localStorage.removeItem("searches");
+
+    // Clear the displayed previous searches
+    displayPreviousSearches([]);
+  });
+}
+
+start();
 
