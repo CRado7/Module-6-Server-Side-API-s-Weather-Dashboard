@@ -1,3 +1,4 @@
+// Define the API key
 const API_KEY = "23f3091fd09f13f57f14a0ac230cee5c";
 
 function searchCity(city) {
